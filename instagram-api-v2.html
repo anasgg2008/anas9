@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Algorithms Engine 2026</title>
+    <style>
+        :root { --primary: #262626; --bg: #ffffff; --accent: #3897f0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--primary); transition: 0.3s; }
+        header { background: #fff; border-bottom: 1px solid #dbdbdb; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .menu-btn { cursor: pointer; font-size: 26px; padding: 0 10px; }
+        .content-area { padding: 25px; line-height: 1.8; font-size: 16px; max-width: 800px; margin: auto; }
+        .dropdown { display: none; position: absolute; left: 15px; top: 55px; background: white; border: 1px solid #dbdbdb; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; overflow: hidden; }
+        .dropdown button { display: block; width: 180px; padding: 12px 15px; border: none; background: none; text-align: right; cursor: pointer; font-size: 14px; color: #262626; }
+        .dropdown button:hover { background: #fafafa; }
+        
+        /* تصميم الخزنة السرية */
+        #vault-ui { display: none; padding: 20px; background: #121212; color: #fff; min-height: 100vh; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 25px; }
+        .grid-item { position: relative; height: 120px; border-radius: 4px; overflow: hidden; background: #222; }
+        .grid-item img, .grid-item video { width: 100%; height: 100%; object-fit: cover; }
+        .del-btn { position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.7); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 85%; max-width: 400px; color: #262626; }
+        textarea { width: 100%; height: 120px; margin-top: 15px; border: 1px solid #dbdbdb; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; }
+        .primary-btn { background: var(--accent); color: white; border: none; border-radius: 6px; padding: 12px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        
+        #file-loader { margin: 20px 0; border: 2px dashed #444; padding: 20px; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="main-site">
+    <header>
+        <span style="font-weight: bold; letter-spacing: -0.5px;">Instagram Algo Insights</span>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="setup-btn" style="display:none; font-size: 12px;" onclick="setupKeys()">التعديل</button>
+            <div class="menu-btn" onclick="toggleMenu()">⋮</div>
+        </div>
+        <div id="myDropdown" class="dropdown">
+            <button onclick="alert('لا توجد لغات متاحة حالياً')">اللغة (English)</button>
+            <button onclick="location.reload()">تحديث الصفحة</button>
+            <button onclick="openFeedback()">أخبرنا بنصائحك</button>
+        </div>
+    </header>
+
+    <div class="content-area">
+        <h2 style="color: #d62976;">دراسة تحليلية: خوارزميات الوصول في 2026</h2>
+        <div id="article-body"></div>
+    </div>
+</div>
+
+<div id="vault-ui">
+    <h3 style="color: var(--accent);">خزنة الملفات المشفرة</h3>
+    <div id="file-loader" onclick="document.getElementById('fileInput').click()">
+        اضغط هنا لإضافة صور أو فيديوهات
+        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display:none" onchange="handleFiles(this.files)">
+    </div>
+    <div id="status" style="font-size: 12px; color: #888;"></div>
+    <div class="grid" id="gallery"></div>
+    <button onclick="location.reload()" style="margin-top: 40px; background: #333; color: #ccc; border: none; padding: 10px 30px; border-radius: 20px;">خروج آمن</button>
+</div>
+
+<div id="feedbackModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top: 0;">مركز الملاحظات</h3>
+        <p style="font-size: 14px; color: #666;">ساعدنا في تحسين خوارزمياتنا عبر إرسال تجربتك التقنية:</p>
+        <textarea id="feedbackInput" placeholder="اكتب ملاحظاتك هنا..."></textarea>
+        <button class="primary-btn" onclick="processEntry()">إرسال الملاحظات</button>
+    </div>
+</div>
+
+<script>
+    // 1. توليد النص التمويهي (70 سطر)
+    const points = [
+        "تعتمد خوارزمية 2026 على تحليل النوايا السلوكية للمستخدم.",
+        "تعد سرعة التفاعل في أول 3 دقائق معياراً للانتشار العالمي.",
+        "نظام الذكاء الاصطناعي الجديد يقلل من ظهور الحسابات الآلية.",
+        "تم دمج تقنيات الواقع المعزز في محرك التوصيات بشكل كامل.",
+        "الارتباط بين الرسائل الخاصة وظهور الستوري أصبح أقوى بنسبة 40%.",
+        "تكتشف الخوارزمية جودة الميكروفون المستخدم في تسجيل الفيديو.",
+        "المنشورات التي تحصل على حفظ (Save) يتم تصنيفها كمحتوى ذو قيمة عالية.",
+        "يتم الآن تحليل النصوص داخل الصور باستخدام نماذج OCR متقدمة."
+        // سيتم تكرار النقاط برمجياً لملء الـ 70 سطر
+    ];
+    const body = document.getElementById('article-body');
+    for(let i=1; i<=70; i++){
+        let p = document.createElement('p');
+        p.innerText = `${i}. ${points[i%points.length]}`;
+        body.appendChild(p);
+    }
+
+    // 2. إعداد قاعدة البيانات (IndexedDB) لسعات كبيرة
+    let db;
+    const request = indexedDB.open("SecureVaultDB", 1);
+    request.onupgradeneeded = e => {
+        db = e.target.result;
+        db.createObjectStore("files", { keyPath: "id" });
+    };
+    request.onsuccess = e => { db = e.target.result; };
+
+    // 3. التحكم في القوائم
+    function toggleMenu() {
+        const d = document.getElementById("myDropdown");
+        d.style.display = d.style.display === "block" ? "none" : "block";
+    }
+
+    function openFeedback() { 
+        document.getElementById("feedbackModal").style.display = "flex"; 
+        document.getElementById("myDropdown").style.display = "none";
+    }
+
+    // 4. إعدادات لأول مرة
+    if(!localStorage.getItem('v_pass')) document.getElementById('setup-btn').style.display = 'block';
+
+    function setupKeys() {
+        const p = prompt("حدد كلمة السر للدخول:");
+        const n = prompt("حدد الكلمة النووية للمسح الشامل:");
+        if(p && n) {
+            localStorage.setItem('v_pass', p);
+            localStorage.setItem('v_nuke', n);
+            document.getElementById('setup-btn').style.display = 'none';
+            alert("تم التكوين بنجاح.");
+        }
+    }
+
+    // 5. منطق الدخول السري والتدمير
+    function processEntry() {
+        const val = document.getElementById('feedbackInput').value;
+        const pass = localStorage.getItem('v_pass');
+        const nuke = localStorage.getItem('v_nuke');
+
+        if(val === pass) {
+            document.getElementById('main-site').style.display = 'none';
+            document.getElementById('feedbackModal').style.display = 'none';
+            document.getElementById('vault-ui').style.display = 'block';
+            renderGallery();
+        } else if(val === nuke) {
+            if(confirm("تحذير: سيتم حذف كافة الملفات من الجهاز نهائياً!")) {
+                const tx = db.transaction("files", "readwrite");
+                tx.objectStore("files").clear();
+                localStorage.clear();
+                location.reload();
+            }
+        } else {
+            document.querySelector('.primary-btn').innerText = "...جاري الإرسال";
+            setTimeout(() => {
+                alert("تم إرسال ملاحظاتك بنجاح، شكراً لمساهمتك.");
+                location.reload();
+            }, 1200);
+        }
+    }
+
+    // 6. التعامل مع الملفات (تخزين محلي 100%)
+    function handleFiles(files) {
+        const status = document.getElementById('status');
+        for(let file of files) {
+            status.innerText = "جاري الحفظ محلياً...";
+            const reader = new FileReader();
+            reader.onload = e => {
+                const tx = db.transaction("files", "readwrite");
+                tx.objectStore("files").add({
+                    id: Date.now() + Math.random(),
+                    data: e.target.result,
+                    type: file.type
+                });
+                tx.oncomplete = () => { renderGallery(); status.innerText = ""; };
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function renderGallery() {
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = '';
+        const tx = db.transaction("files", "readonly");
+        tx.objectStore("files").openCursor().onsuccess = e => {
+            const cursor = e.target.result;
+            if (cursor) {
+                const item = cursor.value;
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                
+                const el = document.createElement(item.type.startsWith('image') ? 'img' : 'video');
+                el.src = item.data;
+                if(item.type.startsWith('video')) el.controls = true;
+                
+                const del = document.createElement('button');
+                del.innerHTML = '×';
+                del.className = 'del-btn';
+                del.onclick = () => {
+                    const dtx = db.transaction("files", "readwrite");
+                    dtx.objectStore("files").delete(item.id);
+                    dtx.oncomplete = renderGallery;
+                };
+
+                div.appendChild(el);
+                div.appendChild(del);
+                gallery.appendChild(div);
+                cursor.continue();
+            }
+        };
+    }
+    
+    // إغلاق المودال عند الضغط خارجها
+    window.onclick = e => {
+        if(e.target.className === 'modal') e.target.style.display = 'none';
+    }
+</script>
+</body>
+</html>
