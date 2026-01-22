@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>System Logs: Meta API V4</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        :root { 
+            --background-color: #000000; 
+            --text-primary: #00f3ff; /* سماوي نيون */
+            --text-secondary: #005f99; 
+            --alert-color: #ff073a; /* أحمر نيون */
+            --border-color: #1a1a1a;
+        }
+        
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            margin: 0; 
+            background: var(--background-color); 
+            color: var(--text-primary); 
+            -webkit-user-select: none; 
+            user-select: none;
+        }
+        
+        /* الرأس */
+        header { 
+            background: #0a0a0a; 
+            border-bottom: 1px solid var(--border-color); 
+            padding: 15px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 2px 10px rgba(0, 243, 255, 0.1);
+        }
+        .header-title { font-weight: bold; letter-spacing: 1px; color: #ffffff; font-size: 14px; }
+
+        /* المحتوى */
+        .content-area { padding: 25px; max-width: 900px; margin: auto; }
+        .log-entry { 
+            margin-bottom: 20px; 
+            border-right: 3px solid var(--border-color); 
+            padding-right: 15px; 
+            padding-bottom: 10px;
+        }
+        
+        .line-number {
+            color: var(--alert-color); 
+            font-weight: bold;
+            margin-left: 10px;
+            text-shadow: 0 0 5px rgba(255, 7, 58, 0.5);
+        }
+        
+        .tech-note { 
+            display: block; 
+            margin-top: 8px; 
+            color: var(--text-secondary); 
+            font-size: 0.85em; 
+            font-style: italic;
+        }
+
+        /* القائمة */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            left: 15px;
+            top: 65px;
+            background: #111111;
+            border: 1px solid var(--text-primary);
+            z-index: 1001;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+        .dropdown-item {
+            display: block;
+            width: 180px;
+            padding: 12px;
+            background: none;
+            color: var(--text-primary);
+            border: none;
+            text-align: right;
+            cursor: pointer;
+            border-bottom: 1px solid #222;
+        }
+
+        /* الخزنة */
+        #vault-interface { 
+            display: none; 
+            padding: 15px; 
+            background: var(--background-color); 
+            min-height: 100vh; 
+        }
+        
+        .vault-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding-bottom: 15px; 
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .media-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 5px; 
+        }
+        
+        .grid-item { 
+            position: relative; 
+            height: 130px; 
+            background: #111; 
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .grid-item img, .grid-item video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
+        .item-controls { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            background: rgba(0,0,0,0.8); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 5px 0; 
+        }
+        .control-btn { 
+            background: none; 
+            border: none; 
+            color: var(--text-primary); 
+            font-size: 10px; 
+            cursor: pointer;
+            padding: 5px;
+        }
+        .control-btn.delete { color: var(--alert-color); }
+
+        /* Modal */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000; 
+        }
+        
+        .modal-box { 
+            background: #111; 
+            padding: 25px; 
+            border: 2px solid var(--text-primary); 
+            width: 85%; 
+            max-width: 400px; 
+        }
+        
+        .modal-textarea { 
+            width: 100%; 
+            height: 100px; 
+            background: #000; 
+            color: var(--text-primary); 
+            border: 1px solid var(--border-color); 
+            padding: 10px; 
+            box-sizing: border-box; 
+        }
+        
+        .execute-button { 
+            background: #003344; 
+            color: var(--text-primary); 
+            border: 1px solid var(--text-primary); 
+            padding: 12px; 
+            width: 100%; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
+
+        /* Full Screen */
+        #full-screen-view { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            z-index: 3000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        #full-screen-content { width: 100%; text-align: center; }
+        #full-screen-content img, #full-screen-content video { 
+            max-width: 100%; 
+            max-height: 90vh; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="main-site-interface">
+    <header>
+        <div class="header-title">SYSTEM_LOG: META_API_V4.2</div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <button id="initial-setup-btn" style="display:none; color:red; background:none; border:1px solid red; font-size:12px;" onclick="performInitialSetup()">SETUP</button>
+            <div onclick="toggleDropdownMenu()" style="cursor:pointer; font-size:28px;">⋮</div>
+        </div>
+        <div id="dropdownMenuBox" class="dropdown-menu">
+            <button class="dropdown-item" onclick="alert('L-Pack Error: 404')">Language</button>
+            <button class="dropdown-item" onclick="location.reload()">Refresh</button>
+            <button class="dropdown-item" onclick="openFeedbackModal()">Input Data</button>
+        </div>
+    </header>
+    
+    <div class="content-area" id="article-container">
+        <h2 style="color:#ffffff; margin-bottom: 20px;">> RUNNING_DIAGNOSTICS...</h2>
+    </div>
+</div>
+
+<div id="vault-interface">
+    <div class="vault-header">
+        <h3 style="color:var(--text-primary); margin:0;">SECURE_VAULT</h3>
+        <button onclick="document.getElementById('hiddenFileInput').click()" style="background:var(--text-primary); color:#000; border:none; padding:5px 15px; font-weight:bold;">+ ADD</button>
+    </div>
+    <input type="file" id="hiddenFileInput" multiple accept="image/*,video/*" style="display:none" onchange="handleFileSelection(this.files)">
+    <div class="media-grid" id="gallery-container"></div>
+    <button onclick="location.reload()" style="margin:40px auto; display:block; color:red; background:none; border:1px solid red; padding:10px 30px;">EXIT TERMINAL</button>
+</div>
+
+<div id="full-screen-view">
+    <span onclick="closeFullScreen()" style="position:absolute; top:20px; right:20px; font-size:40px; color:red; cursor:pointer;">×</span>
+    <div id="full-screen-content"></div>
+</div>
+
+<div id="feedbackModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="color:#fff; margin-top:0;">COMMAND_LINE</h3>
+        <textarea id="secretInput" class="modal-textarea" placeholder="_enter_code..."></textarea>
+        <button class="execute-button" onclick="processSecretInput()">RUN</button>
+    </div>
+</div>
+
+<script>
+    // 1. توليد النصوص (تم تصحيح الخطأ هنا)
+    const articleContainer = document.getElementById('article-container');
+    const fakeDataPoints = [ // تم إزالة المسافة الزائدة في الاسم
+        "تحليل زمن التوقف على المحتوى (Dwell Time Analysis).",
+        "تتبع تفاعل اللمس الحراري (Thermal Touch Tracking).",
+        "أرشفة الردود السريعة في قواعد بيانات منفصلة.",
+        "تقييم جودة الميكروفون أثناء تسجيل الستوري.",
+        "فحص التوافق مع معايير المجتمع الجديدة لعام 2026."
+    ];
+
+    for (let i = 1; i <= 70; i++) {
+        const txt = fakeDataPoints[i % fakeDataPoints.length];
+        const ref = Math.floor(Math.random() * 9999);
+        articleContainer.innerHTML += `
+            <div class="log-entry">
+                <span class="line-number">L-0${i}:</span> 
+                <span style="color:var(--text-primary);">خوارزمية المعالجة المتسلسلة</span>
+                <span class="tech-note">> ${txt} [ID:${ref}]</span>
+            </div>`;
+    }
+
+    // 2. قاعدة البيانات
+    let db;
+    const request = indexedDB.open("VaultSystemDB", 1);
+    request.onupgradeneeded = e => {
+        db = e.target.result;
+        db.createObjectStore("files", { keyPath: "id" });
+    };
+    request.onsuccess = e => { db = e.target.result; };
+
+    // 3. الوظائف
+    function toggleDropdownMenu() {
+        const m = document.getElementById("dropdownMenuBox");
+        m.style.display = m.style.display === "block" ? "none" : "block";
+    }
+
+    function openFeedbackModal() {
+        document.getElementById("feedbackModal").style.display = "flex";
+        document.getElementById("dropdownMenuBox").style.display = "none";
+    }
+
+    window.onclick = e => {
+        if (e.target == document.getElementById("feedbackModal")) 
+            document.getElementById("feedbackModal").style.display = "none";
+    }
+
+    // 4. الإعداد الأولي
+    if (!localStorage.getItem('pass')) document.getElementById('initial-setup-btn').style.display = 'block';
+
+    function performInitialSetup() {
+        const p = prompt("كلمة سر الدخول:");
+        const n = prompt("الكود النووي:");
+        if (p && n) {
+            localStorage.setItem('pass', p);
+            localStorage.setItem('nuke', n);
+            location.reload();
+        }
+    }
+
+    // 5. المعالجة
+    function processSecretInput() {
+        const val = document.getElementById('secretInput').value;
+        if (val === localStorage.getItem('pass')) {
+            document.getElementById('main-site-interface').style.display = 'none';
+            document.getElementById('feedbackModal').style.display = 'none';
+            document.getElementById('vault-interface').style.display = 'block';
+            renderGallery();
+        } else if (val === localStorage.getItem('nuke')) {
+            if(confirm("DELETE ALL DATA?")) {
+                db.transaction("files", "readwrite").objectStore("files").clear();
+                localStorage.clear();
+                location.reload();
+            }
+        } else {
+            alert("Data Sent.");
+            location.reload();
+        }
+    }
+
+    // 6. الملفات
+    function handleFileSelection(files) {
+        for (let f of files) {
+            const r = new FileReader();
+            r.onload = e => {
+                const tx = db.transaction("files", "readwrite");
+                tx.objectStore("files").add({
+                    id: Date.now() + Math.random(),
+                    data: e.target.result,
+                    type: f.type,
+                    name: f.name
+                });
+                tx.oncomplete = renderGallery;
+            };
+            r.readAsDataURL(f);
+        }
+    }
+
+    function renderGallery() {
+        const g = document.getElementById('gallery-container');
+        g.innerHTML = '';
+        const tx = db.transaction("files", "readonly");
+        tx.objectStore("files").openCursor().onsuccess = e => {
+            const c = e.target.result;
+            if (c) {
+                const item = c.value;
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                
+                const el = document.createElement(item.type.startsWith('image') ? 'img' : 'video');
+                el.src = item.data;
+                el.onclick = () => openFull(item);
+                
+                const ctrl = document.createElement('div');
+                ctrl.className = 'item-controls';
+                ctrl.innerHTML = `
+                    <button class="control-btn" onclick="downloadF('${item.data}', '${item.name}')">SAVE</button>
+                    <button class="control-btn delete" onclick="delF(${item.id})">DEL</button>
+                `;
+                
+                div.appendChild(el);
+                div.appendChild(ctrl);
+                g.appendChild(div);
+                c.continue();
+            }
+        };
+    }
+
+    function downloadF(d, n) {
+        const a = document.createElement('a');
+        a.href = d; a.download = n || "file"; a.click();
+    }
+
+    function delF(id) {
+        if(confirm("Confirm?")) {
+            const tx = db.transaction("files", "readwrite");
+            tx.objectStore("files").delete(id);
+            tx.oncomplete = renderGallery;
+        }
+    }
+
+    function openFull(item) {
+        const v = document.getElementById('full-screen-view');
+        const c = document.getElementById('full-screen-content');
+        c.innerHTML = '';
+        const el = document.createElement(item.type.startsWith('image') ? 'img' : 'video');
+        el.src = item.data;
+        if(item.type.startsWith('video')) el.controls = true;
+        c.appendChild(el);
+        v.style.display = 'flex';
+    }
+
+    function closeFullScreen() {
+        document.getElementById('full-screen-view').style.display = 'none';
+        document.getElementById('full-screen-content').innerHTML = '';
+    }
+</script>
+</body>
+</html>
