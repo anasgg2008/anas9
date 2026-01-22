@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>System Logs: Meta API V4</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        /* تعريف الألوان الأساسية */
+        :root { 
+            --background-color: #000000; 
+            --text-primary: #00f3ff; /* نيون سماوي */
+            --text-secondary: #005f99; /* أزرق داكن للشرح */
+            --alert-color: #ff073a; /* نيون أحمر */
+            --border-color: #1a1a1a;
+        }
+        
+        body { 
+            font-family: 'Courier New', Courier, monospace; /* خط الآلة الكاتبة للتمويه التقني */
+            margin: 0; 
+            background: var(--background-color); 
+            color: var(--text-primary); 
+            -webkit-user-select: none; /* منع تحديد النصوص لزيادة الواقعية */
+            user-select: none;
+        }
+        
+        /* تنسيق الشريط العلوي */
+        header { 
+            background: #0a0a0a; 
+            border-bottom: 1px solid var(--border-color); 
+            padding: 15px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 2px 10px rgba(0, 243, 255, 0.1);
+        }
+        .header-title { font-weight: bold; letter-spacing: 1px; color: #ffffff; }
+
+        /* تنسيق منطقة المحتوى */
+        .content-area { padding: 25px; max-width: 900px; margin: auto; }
+        .log-entry { 
+            margin-bottom: 20px; 
+            border-right: 3px solid var(--border-color); 
+            padding-right: 15px; 
+            padding-bottom: 10px;
+        }
+        
+        .line-number {
+            color: var(--alert-color); 
+            font-weight: bold;
+            margin-left: 10px;
+            text-shadow: 0 0 5px rgba(255, 7, 58, 0.5);
+        }
+        
+        .tech-note { 
+            display: block; 
+            margin-top: 8px; 
+            color: var(--text-secondary); 
+            font-size: 0.9em; 
+            font-style: italic;
+        }
+
+        /* تنسيق القائمة المنسدلة */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            left: 15px;
+            top: 65px;
+            background: #111111;
+            border: 1px solid var(--text-primary);
+            z-index: 1001;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+        .dropdown-item {
+            display: block;
+            width: 160px;
+            padding: 12px;
+            background: none;
+            color: var(--text-primary);
+            border: none;
+            text-align: right;
+            cursor: pointer;
+            border-bottom: 1px solid #222;
+            font-family: inherit;
+        }
+
+        /* ---- تنسيق الخزنة السرية ---- */
+        #vault-interface { 
+            display: none; 
+            padding: 15px; 
+            background: var(--background-color); 
+            min-height: 100vh; 
+        }
+        
+        .vault-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding-bottom: 15px; 
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .add-button {
+            background: var(--text-primary); 
+            color: #000; 
+            border: none; 
+            padding: 8px 15px; 
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .media-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+            gap: 10px; 
+        }
+        
+        .grid-item { 
+            position: relative; 
+            height: 130px; 
+            background: #111; 
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .grid-item img, .grid-item video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
+        /* أزرار التحكم تحت كل صورة */
+        .item-controls { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            background: rgba(0,0,0,0.8); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 8px 0; 
+        }
+        .control-btn { 
+            background: none; 
+            border: 1px solid var(--text-primary); 
+            color: var(--text-primary); 
+            font-size: 11px; 
+            cursor: pointer;
+            padding: 3px 10px;
+            font-family: inherit;
+        }
+        .control-btn.delete { color: var(--alert-color); border-color: var(--alert-color); }
+
+        /* ---- النوافذ المنبثقة (Modals) ---- */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000; 
+        }
+        
+        .modal-box { 
+            background: #111; 
+            padding: 25px; 
+            border: 2px solid var(--text-primary); 
+            width: 85%; 
+            max-width: 400px; 
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+        
+        .modal-textarea { 
+            width: 100%; 
+            height: 120px; 
+            background: #000; 
+            color: var(--text-primary); 
+            border: 1px solid var(--border-color); 
+            padding: 15px; 
+            box-sizing: border-box; 
+            font-family: inherit;
+            font-size: 16px;
+            resize: none;
+        }
+        
+        .execute-button { 
+            background: #003344; 
+            color: var(--text-primary); 
+            border: 2px solid var(--text-primary); 
+            padding: 15px; 
+            width: 100%; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 16px;
+            font-family: inherit;
+        }
+        .execute-button:hover { background: var(--text-primary); color: #000; }
+
+        /* عرض الوسائط ملء الشاشة */
+        #full-screen-view { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            z-index: 3000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        #full-screen-content img, #full-screen-content video { 
+            max-width: 100%; 
+            max-height: 95vh; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 35px;
+            color: var(--alert-color);
+            cursor: pointer;
+            z-index: 3001;
+        }
+    </style>
+</head>
+<body>
+
+<div id="main-site-interface">
+    <header>
+        <div class="header-title">SYSTEM_LOG: META_API_V4.2.1</div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <button id="initial-setup-btn" style="display:none; color:var(--alert-color); background:none; border:2px solid var(--alert-color); padding: 5px 10px; font-weight:bold; cursor:pointer;" onclick="performInitialSetup()">INITIALIZE_SYSTEM</button>
+            
+            <div onclick="toggleDropdownMenu()" style="cursor:pointer; font-size:28px; padding: 0 10px;">⋮</div>
+        </div>
+
+        <div id="dropdownMenuBox" class="dropdown-menu">
+            <button class="dropdown-item" onclick="alert('ERROR: Language Package [AR_SA] Not Mounted.')">Language Select</button>
+            <button class="dropdown-item" onclick="location.reload()">Refresh Data Stream</button>
+            <button class="dropdown-item" onclick="openFeedbackModal()">Submit Analysis Report</button>
+        </div>
+    </header>
+    
+    <div class="content-area" id="article-container">
+        <h2 style="color:#ffffff; border-bottom: 2px solid var(--alert-color); padding-bottom: 15px;">> EXECUTION_LOG: CORE_ALGORITHMS_2026</h2>
+        </div>
+</div>
+
+<div id="vault-interface">
+    <div class="vault-header">
+        <h3 style="color:var(--text-primary); margin:0;">SECURE_STORAGE_UNIT</h3>
+        <button class="add-button" onclick="document.getElementById('hiddenFileInput').click()">[+] IMPORT_MEDIA</button>
+    </div>
+    
+    <input type="file" id="hiddenFileInput" multiple accept="image/*,video/*" style="display:none" onchange="handleFileSelection(this.files)">
+    
+    <div class="media-grid" id="gallery-container"></div>
+    
+    <button onclick="location.reload()" style="margin:40px auto; display:block; color:var(--alert-color); background:none; border:2px solid var(--alert-color); padding:12px 30px; font-weight:bold; cursor:pointer;">[X] TERMINATE_SESSION</button>
+</div>
+
+<div id="full-screen-view">
+    <span class="close-fullscreen" onclick="closeFullScreen()">×</span>
+    <div id="full-screen-content"></div>
+</div>
+
+<div id="feedbackModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="color:#ffffff; margin-top:0;">> INPUT_TERMINAL</h3>
+        <p style="color:var(--text-secondary); font-size:0.9em;">Enter authorization code or data packet:</p>
+        <textarea id="secretInput" class="modal-textarea" placeholder="_waiting for input..."></textarea>
+        <button class="execute-button" onclick="processSecretInput()">EXECUTE_COMMAND</button>
+    </div>
+</div>
+
+<script>
+    /* =========================================
+       قسم الجافاسكريبت: المنطق والتحكم
+       ========================================= */
+
+    // 1. توليد المحتوى التمويهي (70 سطر)
+    const articleContainer = document.getElementById('article-container');
+    const fakeData Points = [
+        "تحليل زمن التوقف على المحتوى (Dwell Time Analysis).",
+        "تتبع تفاعل اللمس الحراري (Thermal Touch Tracking).",
+        "أرشفة الردود السريعة في قواعد بيانات منفصلة.",
+        "تقييم جودة الميكروفون أثناء تسجيل الستوري.",
+        "فحص التوافق مع معايير المجتمع الجديدة لعام 2026."
+    ];
+
+    for (let i = 1; i <= 70; i++) {
+        const randomPoint = fakeDataPoints[i % fakeDataPoints.length];
+        const randomRef = Math.floor(Math.random() * 9999);
+        
+        articleContainer.innerHTML += `
+            <div class="log-entry">
+                <span class="line-number">LINE_00${i}:</span> 
+                <span style="color:var(--text-primary);">خوارزمية المعالجة المتسلسلة رقم #${i}</span>
+                <span class="tech-note">> ${randomPoint} [Ref: SYS-${randomRef}]</span>
+            </div>`;
+    }
+
+    // 2. إعداد قاعدة البيانات المحلية (IndexedDB) لتخزين الملفات الكبيرة
+    let databaseInstance;
+    // فتح قاعدة بيانات باسم "SystemSecureDB" الإصدار 1
+    const databaseRequest = indexedDB.open("SystemSecureDB", 1);
+
+    databaseRequest.onupgradeneeded = function(event) {
+        // يتم تنفيذ هذا الكود عند إنشاء القاعدة لأول مرة
+        databaseInstance = event.target.result;
+        // إنشاء مخزن للكائنات (مثل الجدول) باسم "mediaFiles" يستخدم "id" كمفتاح أساسي
+        databaseInstance.createObjectStore("mediaFiles", { keyPath: "id" });
+    };
+
+    databaseRequest.onsuccess = function(event) {
+        // يتم تنفيذ هذا عند نجاح الاتصال بالقاعدة
+        databaseInstance = event.target.result;
+        console.log("Database Connection Established.");
+    };
+
+    // 3. وظائف الواجهة والقوائم
+    function toggleDropdownMenu() {
+        const menu = document.getElementById("dropdownMenuBox");
+        if (menu.style.display === "block") {
+            menu.style.display = "none";
+        } else {
+            menu.style.display = "block";
+        }
+    }
+
+    function openFeedbackModal() {
+        document.getElementById("feedbackModal").style.display = "flex";
+        document.getElementById("dropdownMenuBox").style.display = "none"; // إغلاق القائمة
+    }
+
+    // إغلاق النافذة المنبثقة عند الضغط خارجها
+    window.onclick = function(event) {
+        const modal = document.getElementById("feedbackModal");
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // 4. إعداد كلمات السر لأول مرة
+    // نتحقق مما إذا كانت كلمة السر محفوظة في التخزين المحلي للمتصفح
+    if (!localStorage.getItem('access_password')) {
+        document.getElementById('initial-setup-btn').style.display = 'block';
+    }
+
+    function performInitialSetup() {
+        const newPassword = prompt("SET ACCESS PASSWORD (كلمة سر الدخول):");
+        const newNukeCode = prompt("SET NUCLEAR CODE (كلمة الحذف الشامل):");
+        
+        if (newPassword && newNukeCode) {
+            localStorage.setItem('access_password', newPassword);
+            localStorage.setItem('nuke_code', newNukeCode);
+            alert("SYSTEM INITIALIZED. REBOOTING...");
+            location.reload(); // إعادة تحميل الصفحة لإخفاء زر الإعداد
+        } else {
+            alert("SETUP FAILED. Inputs required.");
+        }
+    }
+
+    // 5. معالجة الإدخال السري (الدخول أو التدمير)
+    function processSecretInput() {
+        const inputValue = document.getElementById('secretInput').value;
+        const storedPassword = localStorage.getItem('access_password');
+        const storedNukeCode = localStorage.getItem('nuke_code');
+
+        if (inputValue === storedPassword) {
+            // === حالة الدخول الناجح ===
+            // إخفاء الموقع التمويهي
+            document.getElementById('main-site-interface').style.display = 'none';
+            // إخفاء النافذة المنبثقة
+            document.getElementById('feedbackModal').style.display = 'none';
+            // إظهار الخزنة
+            document.getElementById('vault-interface').style.display = 'block';
+            // تحميل وعرض الصور
+            renderGallery();
+
+        } else if (inputValue === storedNukeCode) {
+            // === حالة التدمير الشامل (النووي) ===
+            if (confirm("WARNING: EXECUTE FULL DATA WIPE? (هل أنت متأكد من الحذف الشامل؟)")) {
+                // فتح عملية كتابة على قاعدة البيانات
+                const transaction = databaseInstance.transaction("mediaFiles", "readwrite");
+                // مسح كل البيانات في المخزن
+                transaction.objectStore("mediaFiles").clear();
+                
+                transaction.oncomplete = function() {
+                    // مسح كلمات السر من التخزين المحلي
+                    localStorage.clear();
+                    alert("SYSTEM WIPED. All data destroyed.");
+                    location.reload(); // إعادة تحميل الصفحة ليعود كل شيء للبداية
+                };
+            }
+        } else {
+            // === حالة الإدخال الخاطئ (التمويه) ===
+            alert("> DATA PACKET SUBMITTED TO SERVER. Thank you.");
+            location.reload();
+        }
+    }
+
+    // 6. التعامل مع اختيار الملفات وتخزينها
+    function handleFileSelection(selectedFiles) {
+        if (!databaseInstance) { alert("Database not ready."); return; }
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const fileReader = new FileReader();
+
+            fileReader.onload = function(event) {
+                // عند انتهاء قراءة الملف، نبدأ عملية تخزينه
+                const transaction = databaseInstance.transaction("mediaFiles", "readwrite");
+                
+                const fileData = {
+                    id: Date.now() + Math.random(), // إنشاء معرف فريد
+                    data: event.target.result, // محتوى الملف (Base64)
+                    type: file.type, // نوع الملف (صورة/فيديو)
+                    name: file.name // الاسم الأصلي للملف
+                };
+
+                transaction.objectStore("mediaFiles").add(fileData);
+                
+                // عند انتهاء التخزين، نعيد رسم المعرض
+                transaction.oncomplete = function() {
+                    renderGallery();
+                };
+            };
+            
+            // قراءة الملف كـ Data URL
+            fileReader.readAsDataURL(file);
+        }
+    }
+
+    // 7. عرض الصور والفيديوهات في الخزنة (Render Gallery)
+    function renderGallery() {
+        const galleryContainer = document.getElementById('gallery-container');
+        galleryContainer.innerHTML = ''; // تفريغ المحتوى الحالي
+
+        // فتح عملية قراءة فقط
+        const transaction = databaseInstance.transaction("mediaFiles", "readonly");
+        const objectStore = transaction.objectStore("mediaFiles");
+
+        // استخدام مؤشر (Cursor) للمرور على كل الملفات المحفوظة
+        objectStore.openCursor().onsuccess = function(event) {
+            const cursor = event.target.result;
+            if (cursor) {
+                const item = cursor.value;
+                
+                // إنشاء عنصر الحاوية للصورة/الفيديو
+                const gridItemDiv = document.createElement('div');
+                gridItemDiv.className = 'grid-item';
+
+                // إنشاء عنصر الميديا (صورة أو فيديو)
+                let mediaElement;
+                if (item.type.startsWith('image')) {
+                    mediaElement = document.createElement('img');
+                } else {
+                    mediaElement = document.createElement('video');
+                }
+                mediaElement.src = item.data;
+                
+                // عند الضغط على الصورة، تفتح ملء الشاشة
+                mediaElement.onclick = function() {
+                    openFullScreenView(item);
+                };
+
+                // إنشاء شريط التحكم السفلي (تصدير وحذف)
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'item-controls';
+                
+                // زر التصدير (Export)
+                const exportBtn = document.createElement('button');
+                exportBtn.innerText = 'EXPORT';
+                exportBtn.className = 'control-btn';
+                exportBtn.onclick = function() {
+                    downloadFile(item.data, item.name);
+                };
+
+                // زر الحذف (Delete)
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerText = 'DELETE';
+                deleteBtn.className = 'control-btn delete';
+                deleteBtn.onclick = function() {
+                    deleteFile(item.id);
+                };
+
+                // تجميع العناصر وإضافتها للصفحة
+                controlsDiv.appendChild(exportBtn);
+                controlsDiv.appendChild(deleteBtn);
+                gridItemDiv.appendChild(mediaElement);
+                gridItemDiv.appendChild(controlsDiv);
+                galleryContainer.appendChild(gridItemDiv);
+
+                // الانتقال للعنصر التالي في قاعدة البيانات
+                cursor.continue();
+            }
+        };
+    }
+
+    // 8. وظائف مساعدة (تصدير، حذف، ملء الشاشة)
+    function downloadFile(dataUrl, fileName) {
+        const downloadLink = document.createElement('a');
+        downloadLink.href = dataUrl;
+        downloadLink.download = fileName || "exported_file";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+
+    function deleteFile(fileId) {
+        if (confirm("> CONFIRM DELETION? (تأكيد الحذف؟)")) {
+            const transaction = databaseInstance.transaction("mediaFiles", "readwrite");
+            transaction.objectStore("mediaFiles").delete(fileId);
+            transaction.oncomplete = function() {
+                renderGallery(); // إعادة رسم المعرض بعد الحذف
+            };
+        }
+    }
+
+    function openFullScreenView(item) {
+        const fullScreenView = document.getElementById('full-screen-view');
+        const fullScreenContent = document.getElementById('full-screen-content');
+        fullScreenContent.innerHTML = ''; // تفريغ المحتوى السابق
+
+        let fullMediaElement;
+        if (item.type.startsWith('image')) {
+            fullMediaElement = document.createElement('img');
+        } else {
+            fullMediaElement = document.createElement('video');
+            fullMediaElement.controls = true; // إضافة أزرار التحكم للفيديو
+            fullMediaElement.autoplay = true;
+        }
+        fullMediaElement.src = item.data;
+        
+        fullScreenContent.appendChild(fullMediaElement);
+        fullScreenView.style.display = 'flex';
+    }
+
+    function closeFullScreen() {
+        document.getElementById('full-screen-view').style.display = 'none';
+        document.getElementById('full-screen-content').innerHTML = ''; // إيقاف الفيديو إن وجد
+    }
+
+</script>
+</body>
+</html>
